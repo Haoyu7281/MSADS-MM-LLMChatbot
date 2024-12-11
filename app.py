@@ -134,18 +134,33 @@ class MultimodalSearchEngine:
         # Perform search across the entire FAISS index
         distances, indices = self.faiss_index.search(query_embedding, k)
 
-        # Combine results with metadata
+        # Determine split points for text and image embeddings
+        num_text_embeddings = len(self.metadata_df)  # Assume text embeddings come first
         results = []
+
         for dist, idx in zip(distances[0], indices[0]):
-            if 0 <= idx < len(self.metadata_df):
+            if 0 <= idx < num_text_embeddings:
+                # Text embedding metadata
                 metadata_dict = self.metadata_df.iloc[idx].to_dict()
-                results.append({
-                    'index': idx,
-                    'distance': float(dist),
-                    'metadata': metadata_dict
-                })
+                embedding_type = "text"
+            elif num_text_embeddings <= idx < (2 * num_text_embeddings):
+                # Image embedding metadata
+                metadata_dict = self.metadata_df.iloc[idx - num_text_embeddings].to_dict()
+                embedding_type = "image"
             else:
-                continue  # Skip invalid indices if any
+                continue  # Skip invalid indices
+
+            # Append the result with metadata
+            results.append({
+                'index': idx,
+                'distance': float(dist),
+                'metadata': metadata_dict,
+                'type': embedding_type
+            })
+
+            # Stop if k results are collected
+            if len(results) >= k:
+                break
 
         return results
 
@@ -201,19 +216,22 @@ class MultimodalSearchEngine:
 def format_results(results: List[dict]) -> str:
     """Format search results for the prompt"""
     formatted = []
-    for idx, result in enumerate(results, 1):
+    for idx, result in enumerate(results):
         product = result['metadata']
         # Extract product title and price from the Text_Description
         text_desc = product.get('Text_Description', 'N/A')
         # Split at | to separate title from category and price
         parts = text_desc.split('|')
         title = parts[0].strip() if parts else 'N/A'
+        category = parts[1].strip() if parts else 'N/A'
+        feature = parts[-2].strip() if len(parts) > 1 else 'N/A'
         price = parts[-1].strip() if len(parts) > 1 else 'N/A'
         
         formatted.append(f"Product {idx}:")
         formatted.append(f"Title: {title}")
+        formatted.append(f"Category: {category}")
+        formatted.append(f"Feature: {feature}")
         formatted.append(f"Price: {price}")
-        formatted.append(f"Similarity Score: {1 - result['distance']:.2f}\n")
     return "\n".join(formatted)
 
 def display_product_results(results: List[dict]):
@@ -224,13 +242,13 @@ def display_product_results(results: List[dict]):
             product = result['metadata']
             
             # Get the first image URL (split by |)
-            image_urls = product.get('Image_url', '').split('|')
-            main_image_url = image_urls[0] if image_urls else None
+            main_image_url = product.get('Image', '')
             
             # Extract title and price from Text_Description
             text_desc = product.get('Text_Description', '')
             parts = text_desc.split('|')
             title = parts[0].strip() if parts else 'N/A'
+            category = parts[1].strip() if parts else 'N/A'
             price = parts[-1].strip() if len(parts) > 1 else 'N/A'
             
             # Display image
@@ -242,6 +260,7 @@ def display_product_results(results: List[dict]):
             
             # Display product info
             st.markdown(f"**{title}**")
+            st.markdown(f"**{category}**")
             st.markdown(f"Price: {price}")
             st.markdown(f"Similarity: {1 - result['distance']:.2%}")
 
@@ -266,7 +285,7 @@ def initialize_search_engine():
     try:
         # Define relative paths to the data files
         current_dir = os.path.dirname(os.path.abspath(__file__))
-        faiss_path = os.path.join(current_dir, 'faiss_index_short.bin')
+        faiss_path = os.path.join(current_dir, 'faiss_index.bin')
         metadata_path = os.path.join(current_dir, 'metadata.csv')
         
         # Initialize and load FAISS index and metadata

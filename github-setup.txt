@@ -14,6 +14,7 @@ __pycache__/
 *.pyc
 .DS_Store
 .streamlit/secrets.toml
+.devcontainer
 
 # .streamlit/config.toml
 [theme]

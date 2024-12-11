@@ -7,13 +7,13 @@ import pandas as pd
 from typing import List, Union, Tuple
 from PIL import Image
 import torch
-from transformers import CLIPImageProcessor, CLIPModel
+from transformers import CLIPProcessor, CLIPModel
 import faiss
 
 class MultimodalSearchEngine:
     def __init__(self):
         self.clip_model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
-        self.clip_processor = CLIPImageProcessor.from_pretrained("openai/clip-vit-base-patch32")
+        self.clip_processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
         self.text_index = None
         self.image_index = None
         self.metadata_df = None

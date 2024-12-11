@@ -6,7 +6,7 @@ Pillow>=10.0.0
 
 # Machine learning and embeddings
 torch>=2.0.0
-transformers>=4.37.0
+transformers==4.47.0
 faiss-cpu>=1.7.4
 
 # LangChain and OpenAI

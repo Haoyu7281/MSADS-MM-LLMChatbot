@@ -264,7 +264,7 @@ Response should be informative but concise, highlighting the most relevant aspec
 st.title("🔍 Multimodal Product Search Assistant")
 
 # Initialize search engine
-if 'search_engine' not in st.session_state:
+if st.session_state.search_engine is None:
     with st.spinner("Initializing search engine..."):
         st.session_state.search_engine = initialize_search_engine()
         if st.session_state.search_engine is None:
@@ -272,7 +272,7 @@ if 'search_engine' not in st.session_state:
             st.stop()
 
 # API Key input
-if 'api_key' not in st.session_state:
+if not st.session_state.api_key:
     with st.form("api_key_form"):
         api_key = st.text_input("OpenAI API Key:", type="password")
         submitted = st.form_submit_button("Submit")
@@ -284,9 +284,6 @@ if 'api_key' not in st.session_state:
             st.error("Please enter a valid OpenAI API key")
 else:
     # Display chat messages
-    if 'messages' not in st.session_state:
-        st.session_state.messages = []
-
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
             st.write(message["content"])

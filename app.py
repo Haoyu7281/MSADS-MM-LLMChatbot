@@ -120,7 +120,7 @@ class MultimodalSearchEngine:
     self, 
     query_embedding: np.ndarray, 
     k: int = 5
-) -> List[dict]:
+    ) -> List[dict]:
         """
         Retrieve the top-k nearest neighbors from the FAISS index.
 

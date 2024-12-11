@@ -3,7 +3,7 @@ streamlit==1.31.0
 langchain-openai==0.0.5
 faiss-cpu==1.7.4
 pillow==10.2.0
-transformers==4.37.2
+transformers==4.47.0
 torch==2.2.0
 pandas==2.2.0
 numpy==1.26.3

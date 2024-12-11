@@ -236,9 +236,10 @@ def format_results(results: List[dict]) -> str:
     return "\n".join(formatted)
 
 def display_product_results(results: List[dict]):
-    """Display product results in a grid with images"""
-    cols = st.columns(len(results))
-    for col, result in zip(cols, results):
+    """Display the top 3 product results in a grid with images"""
+    top_results = results[:3]  # Select only the top 3 results
+    cols = st.columns(len(top_results))
+    for col, result in zip(cols, top_results):
         with col:
             product = result['metadata']
             
@@ -305,16 +306,18 @@ PROMPT_TEMPLATE = """Based on the retrieved product information below, provide a
 **User Query:**
 {query}
 
-If the user provides a query with an image, avoid responding with uncertainty or stating that the product is unknown. Instead, use the product with the highest cosine similarity from the retrieved results to craft your reply.
+### Instructions:
+1. If the user uploads an image and asks about a product feature, respond based on the product with the highest cosine similarity from the retrieved results. Do not mention cosine similarity or the retrieval process in your reply—present the information as if it is directly known.
+2. If the user requests a comparison of products, use the retrieved context to compare the features, prices, and relevance of the products. Highlight key differences or advantages for an informed decision.
+3. If the user asks about product details or features, provide the information based on the retrieved knowledge, ensuring relevance and accuracy.
 
 ### Guidelines:
-1. Prioritize the product with the highest cosine similarity and focus on its key features, price, and relevance to the query.
-2. When appropriate, compare prices and features across the retrieved products to offer additional insights.
-3. Make specific recommendations tailored to the user's query.
-4. If showing similar products, explain their relevance and why they might also meet the user's needs.
-5. Include price comparisons to help the user make informed decisions.
+1. Prioritize clarity and relevance. Use the retrieved product with the highest relevance to address the query comprehensively.
+2. Make specific recommendations tailored to the user's query, focusing on key features, price, and product relevance.
+3. For product comparisons, explain why certain products may better suit the user's needs and provide price comparisons where applicable.
+4. Ensure your response is informative and user-focused, highlighting the most relevant aspects of the retrieved products.
 
-Your response should be informative, concise, and user-focused, highlighting the most relevant aspects of each product."""
+Your response should be professional, concise, and accurate, ensuring it directly answers the user's query while leveraging the retrieved product information effectively."""
 
 # Streamlit App
 st.title("🔍 Multimodal Product Search Assistant")
@@ -384,7 +387,7 @@ else:
                     try:
                         # Retrieve results for text and image types
                         results = search_engine.retrieve_top_k(
-                            query_embedding=query_embedding, k=3
+                            query_embedding=query_embedding, k=8
                         )
 
                         # Combine and format results

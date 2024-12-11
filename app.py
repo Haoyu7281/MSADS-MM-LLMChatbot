@@ -115,55 +115,88 @@ class MultimodalSearchEngine:
             raise ValueError("At least one of text_query or image must be provided.")
 
         return query_embedding.astype(np.float32)
-
-    def retrieve_top_k_by_type(
+    
+    def retrieve_top_k(
     self, 
     query_embedding: np.ndarray, 
-    k: int = 5, 
-    target_type: str = "text"
+    k: int = 5
 ) -> List[dict]:
         """
-        Retrieve the top-k nearest neighbors from the FAISS index filtered by type.
+        Retrieve the top-k nearest neighbors from the FAISS index.
 
         Parameters:
             query_embedding (np.ndarray): Query embedding.
             k (int): Number of top results to retrieve.
-            target_type (str): Filter results by type ('text' or 'image').
 
         Returns:
             List[Dict]: List of results with metadata and distances.
         """
         # Perform search across the entire FAISS index
-        distances, indices = self.faiss_index.search(query_embedding, self.faiss_index.ntotal)
+        distances, indices = self.faiss_index.search(query_embedding, k)
 
-        # Determine split points for text and image embeddings
-        num_text_embeddings = len(self.metadata_df)  # Assume text embeddings come first
-        num_image_embeddings = len(self.metadata_df)  # Assume image embeddings follow
-
+        # Combine results with metadata
         results = []
         for dist, idx in zip(distances[0], indices[0]):
-            # Map FAISS index to text or image metadata
-            if 0 <= idx < num_text_embeddings:
-                embedding_type = "text"
-                metadata_idx = idx
-            elif num_text_embeddings <= idx < (num_text_embeddings + num_image_embeddings):
-                embedding_type = "image"
-                metadata_idx = idx - num_text_embeddings
-            else:
-                continue  # Skip invalid indices
-
-            # Filter results by target type
-            if embedding_type == target_type:
-                metadata_dict = self.metadata_df.iloc[metadata_idx].to_dict()
+            if 0 <= idx < len(self.metadata_df):
+                metadata_dict = self.metadata_df.iloc[idx].to_dict()
                 results.append({
                     'index': idx,
                     'distance': float(dist),
                     'metadata': metadata_dict
                 })
-                if len(results) >= k:
-                    break
+            else:
+                continue  # Skip invalid indices if any
 
         return results
+
+#     def retrieve_top_k_by_type(
+#     self, 
+#     query_embedding: np.ndarray, 
+#     k: int = 5, 
+#     target_type: str = "text"
+# ) -> List[dict]:
+#         """
+#         Retrieve the top-k nearest neighbors from the FAISS index filtered by type.
+
+#         Parameters:
+#             query_embedding (np.ndarray): Query embedding.
+#             k (int): Number of top results to retrieve.
+#             target_type (str): Filter results by type ('text' or 'image').
+
+#         Returns:
+#             List[Dict]: List of results with metadata and distances.
+#         """
+#         # Perform search across the entire FAISS index
+#         distances, indices = self.faiss_index.search(query_embedding, self.faiss_index.ntotal)
+
+#         # Determine split points for text and image embeddings
+#         num_text_embeddings = len(self.metadata_df)  # Assume text embeddings come first
+#         num_image_embeddings = len(self.metadata_df)  # Assume image embeddings follow
+
+#         results = []
+#         for dist, idx in zip(distances[0], indices[0]):
+#             # Map FAISS index to text or image metadata
+#             if 0 <= idx < num_text_embeddings:
+#                 embedding_type = "text"
+#                 metadata_idx = idx
+#             elif num_text_embeddings <= idx < (num_text_embeddings + num_image_embeddings):
+#                 embedding_type = "image"
+#                 metadata_idx = idx - num_text_embeddings
+#             else:
+#                 continue  # Skip invalid indices
+
+#             # Filter results by target type
+#             if embedding_type == target_type:
+#                 metadata_dict = self.metadata_df.iloc[metadata_idx].to_dict()
+#                 results.append({
+#                     'index': idx,
+#                     'distance': float(dist),
+#                     'metadata': metadata_dict
+#                 })
+#                 if len(results) >= k:
+#                     break
+
+#         return results
 
 def format_results(results: List[dict]) -> str:
     """Format search results for the prompt"""
@@ -203,7 +236,7 @@ def display_product_results(results: List[dict]):
             # Display image
             if main_image_url:
                 try:
-                    st.image(main_image_url, use_column_width=True)
+                    st.image(main_image_url, use_container_width=True)
                 except Exception as e:
                     st.error(f"Error loading image: {str(e)}")
             
@@ -327,22 +360,12 @@ else:
                 with st.chat_message("assistant"):
                     try:
                         # Retrieve results for text and image types
-                        text_results = search_engine.retrieve_top_k_by_type(
-                            query_embedding=query_embedding, k=3, target_type="text"
-                        )
-                        image_results = search_engine.retrieve_top_k_by_type(
-                            query_embedding=query_embedding, k=3, target_type="image"
+                        results = search_engine.retrieve_top_k(
+                            query_embedding=query_embedding, k=3
                         )
 
                         # Combine and format results
-                        formatted_text_results = format_results(text_results)
-                        formatted_image_results = format_results(image_results)
-
-                        # Create context for prompt
-                        context = (
-                            "Text Results:\n" + formatted_text_results + "\n\n" +
-                            "Image Results:\n" + formatted_image_results
-                        )
+                        context = format_results(results)
 
                         # Create and send prompt
                         query = text_query or "Find products similar to the uploaded image."
@@ -352,11 +375,8 @@ else:
                         st.write(response)
 
                         # Display retrieved products
-                        st.subheader("Retrieved Products (Text)")
-                        display_product_results(text_results)
-
-                        st.subheader("Retrieved Products (Images)")
-                        display_product_results(image_results)
+                        st.subheader("Retrieved Products")
+                        display_product_results(results)
 
                         # Add assistant response to chat history
                         st.session_state.messages.append({"role": "assistant", "content": response})

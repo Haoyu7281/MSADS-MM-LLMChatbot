@@ -231,8 +231,6 @@ if 'search_engine' not in st.session_state:
 def initialize_search_engine():
     """Initialize and load the search engine"""
     try:
-        search_engine = MultimodalSearchEngine()
-        
         # Define relative paths to the data files
         current_dir = os.path.dirname(os.path.abspath(__file__))
         faiss_path = os.path.join(current_dir, 'faiss_index_short.bin')

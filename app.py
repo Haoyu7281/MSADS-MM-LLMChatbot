@@ -307,17 +307,23 @@ PROMPT_TEMPLATE = """Based on the retrieved product information below, provide a
 {query}
 
 ### Instructions:
-1. If the user uploads an image and asks about a product feature, respond based on the product with the highest cosine similarity from the retrieved results. Do not mention cosine similarity or the retrieval process in your reply—present the information as if it is directly known.
+1. For image-based queries about product features: Respond confidently based on the product with the highest cosine similarity from the retrieved results. Present the information as if it is directly known, without referencing cosine similarity or the retrieval process.
 2. If the user requests a comparison of products, use the retrieved context to compare the features, prices, and relevance of the products. Highlight key differences or advantages for an informed decision.
 3. If the user asks about product details or features, provide the information based on the retrieved knowledge, ensuring relevance and accuracy.
 
-### Guidelines:
-1. Prioritize clarity and relevance. Use the retrieved product with the highest relevance to address the query comprehensively.
-2. Make specific recommendations tailored to the user's query, focusing on key features, price, and product relevance.
-3. For product comparisons, explain why certain products may better suit the user's needs and provide price comparisons where applicable.
-4. Ensure your response is informative and user-focused, highlighting the most relevant aspects of the retrieved products.
 
-Your response should be professional, concise, and accurate, ensuring it directly answers the user's query while leveraging the retrieved product information effectively."""
+### Guidelines:
+	1.	Always respond with confidence using the information from the retrieved product with the highest relevance. Do not mention any limitations or uncertainty.
+	2.	Tailor your response to the user’s query:
+	    •For specific product features, focus on the top-ranked product.
+	    •For comparisons, emphasize key attributes and differences across the retrieved products.
+	3.	Make specific recommendations, clearly explaining why certain products are a better match for the user’s needs. Include price and feature comparisons where applicable.
+	4.	Ensure the response is professional, concise, and user-focused while providing actionable and relevant insights about the products.
+
+### Response Tone:
+    1. Always sound confident and authoritative.
+	2. Avoid apologizing for not knowing or showing uncertainty.
+	3. Highlight the most relevant and useful information to directly address the user’s query."""
 
 # Streamlit App
 st.title("🔍 Multimodal Product Search Assistant")
